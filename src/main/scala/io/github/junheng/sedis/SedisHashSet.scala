@@ -1,5 +1,11 @@
 package io.github.junheng.sedis
 
+import org.json4s.Formats
+import org.json4s.jackson.Serialization._
+import redis.clients.jedis._
+
+import scala.collection.mutable
+
 case class SedisHashSet[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends mutable.Map[String, T] {
 
   override def +=(kv: (String, T)): this.type = {
