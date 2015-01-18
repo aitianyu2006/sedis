@@ -12,13 +12,13 @@ import scala.collection.mutable
 
 class Sedis(jedis: Jedis) extends JedisResource(jedis) {
 
-  def objectQueue(id: String) = SedisObjectQueue(s"object_queue_$id", jedis)
+  def objectQueue(id: String) = SedisObjectQueue(s"$id-object-queue", jedis)
 
-  def queue(id: String) = SedisQueue(s"queue_$id", jedis)
+  def queue(id: String) = SedisQueue(s"$id-queue", jedis)
 
-  def hash[T <: AnyRef : Manifest](id: String) = SedisHashSet[T](s"hash_$id", jedis)
+  def hash[T <: AnyRef : Manifest](id: String) = SedisHashSet[T](s"$id-hash", jedis)
 
-  def sortedSet(id: String) = SedisSortedSet(s"sorted_set_$id", jedis)
+  def sortedSet(id: String) = SedisSortedSet(s"$id-sorted_set", jedis)
 
   def put(key: String, value: String) = jedis.sadd(key, value)
 
@@ -151,7 +151,6 @@ case class SedisSortedSetIterator(id: String, jedis: Jedis) extends Iterator[(St
 
   override def next(): (String, Double) = update().dequeue()
 }
-
 
 
 case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends Iterator[(String, T)] {
