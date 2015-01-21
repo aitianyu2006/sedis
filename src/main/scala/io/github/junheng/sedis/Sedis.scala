@@ -4,7 +4,7 @@ import java.util
 import java.util.Map.Entry
 
 import org.json4s.jackson.Serialization._
-import org.json4s.{Formats, DefaultFormats, Serializer}
+import org.json4s.{DefaultFormats, Formats, Serializer}
 import redis.clients.jedis._
 
 import scala.collection.JavaConversions._
@@ -80,6 +80,8 @@ object Sedis {
   }
 
   def format(serializers: Serializer[_]*) = serializers.foreach(x => formats += x)
+
+  def enums(enums: Enumeration*) = enums.foreach(x => formats += new RangedEnumSerializer(x))
 
   def close() = pool.close()
 }
