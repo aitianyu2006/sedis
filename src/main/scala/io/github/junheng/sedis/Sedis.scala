@@ -76,7 +76,7 @@ object Sedis {
     config.setMaxTotal(poolSize)
     config.setMaxIdle(idleSize)
     config.setMaxWaitMillis(1000 * 10)
-    pool = new JedisPool(config, server, port)
+    pool = new JedisPool(config, server, port, 0)
   }
 
   def format(serializers: Serializer[_]*) = serializers.foreach(x => formats += x)
