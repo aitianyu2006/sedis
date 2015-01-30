@@ -51,14 +51,7 @@ class Sedis(jedis: Jedis) extends JedisResource(jedis) {
   }
 }
 
-abstract class JedisResource(jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
 
-  def close() = jedis.close()
-
-  def select(index: Int): Boolean = jedis.select(index) == "OK"
-
-  def flush() = jedis.flushDB()
-}
 
 object Sedis {
   var pool: JedisPool = null
@@ -87,101 +80,12 @@ object Sedis {
 }
 
 
-case class SedisObjectQueue(id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
-
-  def enqueue(payload: AnyRef) = jedis.lpush(id, write(payload))
-
-  def dequeue[T <: AnyRef : Manifest]() = read[T](jedis.brpop(0, id).last) //wait until available
-
-  def clear() = jedis.del(id)
-
-  def size() = jedis.llen(id).toInt
-}
-
-case class SedisQueue(id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
-
-  def enqueue(payload: String) = jedis.lpush(id, payload)
-
-  def dequeue() = jedis.brpop(0, id).last //wait until available
-
-  def clear() = jedis.del(id)
-
-  def size() = jedis.llen(id).toInt
-}
-
-case class SedisSortedSet(id: String, jedis: Jedis) extends mutable.Iterable[(String, Double)] {
-
-  def update(member: String, score: Double) = jedis.zadd(id, score, member)
-
-  def del(members: String*) = jedis.zrem(id, members: _*)
-
-  def rank(member: String) = jedis.zrank(id, member)
-
-  def clear() = jedis.del(id)
-
-  def size(start: Double, end: Double): Int = jedis.zcount(id, start, end).toInt
-
-  override def size: Int = jedis.zcount(id, "-inf", "+inf").toInt
-
-  override def iterator: Iterator[(String, Double)] = SedisSortedSetIterator(id, jedis)
-}
-
-case class SedisSortedSetIterator(id: String, jedis: Jedis) extends Iterator[(String, Double)] {
-
-  var cursor = "0"
-
-  var isEnd = false
-
-  val cache = mutable.Queue[(String, Double)]()
-
-  private def update() = {
-    if (cache.isEmpty && !isEnd) {
-      scan().foreach(x => cache.enqueue((x.getElement, x.getScore)))
-    }
-    cache
-  }
-
-  private def scan(): util.List[Tuple] = {
-    val result = jedis.zscan(id, cursor)
-    isEnd = result.getStringCursor == "0"
-    cursor = result.getStringCursor
-    if (result.getResult.isEmpty && !isEnd) scan()
-    else result.getResult
-  }
-
-  override def hasNext: Boolean = update().nonEmpty
-
-  override def next(): (String, Double) = update().dequeue()
-}
 
 
-case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends Iterator[(String, T)] {
 
-  var cursor = "0"
 
-  var isEnd = false
 
-  val cache = mutable.Queue[(String, T)]()
 
-  private def update() = {
-    if (cache.isEmpty && !isEnd) {
-      scan().foreach(x => {
-        val value: T = read[T](x.getValue)
-        cache.enqueue((x.getKey, value))
-      })
-    }
-    cache
-  }
 
-  private def scan(): util.List[Entry[String, String]] = {
-    val result: ScanResult[Entry[String, String]] = jedis.hscan(id, cursor)
-    isEnd = result.getStringCursor == "0"
-    cursor = result.getStringCursor
-    if (result.getResult.isEmpty && !isEnd) scan()
-    else result.getResult
-  }
 
-  override def hasNext: Boolean = update().nonEmpty
 
-  override def next(): (String, T) = update().dequeue()
-}
