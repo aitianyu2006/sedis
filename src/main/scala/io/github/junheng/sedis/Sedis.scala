@@ -64,12 +64,12 @@ object Sedis {
     new Sedis(resource)
   }
 
-  def open(server: String, port: Int, poolSize: Int = 128, idleSize: Int = 16) = {
+  def open(server: String, port: Int, poolSize: Int = 128, idleSize: Int = 16, timeout:Int = 0) = {
     val config = new JedisPoolConfig()
     config.setMaxTotal(poolSize)
     config.setMaxIdle(idleSize)
     config.setMaxWaitMillis(1000 * 10)
-    pool = new JedisPool(config, server, port, 0)
+    pool = new JedisPool(config, server, port, timeout)
   }
 
   def format(serializers: Serializer[_]*) = serializers.foreach(x => formats += x)
