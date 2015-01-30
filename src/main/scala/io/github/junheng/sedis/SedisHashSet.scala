@@ -9,16 +9,19 @@ import scala.collection.mutable
 case class SedisHashSet[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends mutable.Map[String, T] {
 
   override def +=(kv: (String, T)): this.type = {
+    Sedis.check(jedis)
     jedis.hset(id, kv._1, write(kv._2))
     this
   }
 
   override def -=(key: String): this.type = {
+    Sedis.check(jedis)
     jedis.hdel(id, key)
     this
   }
 
   override def get(key: String): Option[T] = {
+    Sedis.check(jedis)
     if (jedis.exists(id)) {
       jedis.hget(id, key) match {
         case content: String => Option(read[T](content))
@@ -29,9 +32,15 @@ case class SedisHashSet[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implic
     }
   }
 
-  override def clear() = jedis.del(id)
+  override def clear() = {
+    Sedis.check(jedis)
+    jedis.del(id)
+  }
 
-  override def size: Int = jedis.hlen(id).toInt
+  override def size: Int = {
+    Sedis.check(jedis)
+    jedis.hlen(id).toInt
+  }
 
   override def iterator: Iterator[(String, T)] = SedisHashSetIterator[T](id, jedis)
 }

@@ -29,6 +29,7 @@ case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, jedis: Jedis
   }
 
   private def scan(): util.List[Entry[String, String]] = {
+    Sedis.check(jedis)
     val result: ScanResult[Entry[String, String]] = jedis.hscan(id, cursor)
     isEnd = result.getStringCursor == "0"
     cursor = result.getStringCursor

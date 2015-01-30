@@ -7,11 +7,23 @@ import scala.collection.JavaConversions._
 
 case class SedisQueue(id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
 
-  def enqueue(payload: String) = jedis.lpush(id, payload)
+  def enqueue(payload: String) = {
+    Sedis.check(jedis)
+    jedis.lpush(id, payload)
+  }
 
-  def dequeue() = jedis.brpop(0, id).last //wait until available
+  def dequeue() = {
+    Sedis.check(jedis)
+    jedis.brpop(0, id).last
+  } //wait until available
 
-  def clear() = jedis.del(id)
+  def clear() = {
+    Sedis.check(jedis)
+    jedis.del(id)
+  }
 
-  def size() = jedis.llen(id).toInt
+  def size() = {
+    Sedis.check(jedis)
+    jedis.llen(id).toInt
+  }
 }

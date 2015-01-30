@@ -6,17 +6,38 @@ import scala.collection.mutable
 
 case class SedisSortedSet(id: String, jedis: Jedis) extends mutable.Iterable[(String, Double)] {
 
-  def update(member: String, score: Double) = jedis.zadd(id, score, member)
+  def update(member: String, score: Double) = {
+    Sedis.check(jedis)
+    jedis.zadd(id, score, member)
+  }
 
-  def del(members: String*) = jedis.zrem(id, members: _*)
+  def del(members: String*) = {
+    Sedis.check(jedis)
+    jedis.zrem(id, members: _*)
+  }
 
-  def rank(member: String) = jedis.zrank(id, member)
+  def rank(member: String) = {
+    Sedis.check(jedis)
+    jedis.zrank(id, member)
+  }
 
-  def clear() = jedis.del(id)
+  def clear() = {
+    Sedis.check(jedis)
+    jedis.del(id)
+  }
 
-  def size(start: Double, end: Double): Int = jedis.zcount(id, start, end).toInt
+  def size(start: Double, end: Double): Int = {
+    Sedis.check(jedis)
+    jedis.zcount(id, start, end).toInt
+  }
 
-  override def size: Int = jedis.zcount(id, "-inf", "+inf").toInt
+  override def size: Int = {
+    Sedis.check(jedis)
+    jedis.zcount(id, "-inf", "+inf").toInt
+  }
 
-  override def iterator: Iterator[(String, Double)] = SedisSortedSetIterator(id, jedis)
+  override def iterator: Iterator[(String, Double)] = {
+    Sedis.check(jedis)
+    SedisSortedSetIterator(id, jedis)
+  }
 }

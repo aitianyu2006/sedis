@@ -23,6 +23,7 @@ case class SedisSortedSetIterator(id: String, jedis: Jedis) extends Iterator[(St
   }
 
   private def scan(): util.List[Tuple] = {
+    Sedis.check(jedis)
     val result = jedis.zscan(id, cursor)
     isEnd = result.getStringCursor == "0"
     cursor = result.getStringCursor
