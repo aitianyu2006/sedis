@@ -69,7 +69,8 @@ object Sedis {
     val config = new JedisPoolConfig()
     config.setMaxTotal(poolSize)
     config.setMaxIdle(idleSize)
-    config.setMaxWaitMillis(1000 * 10)
+    config.setMaxWaitMillis(-1)
+    config.setTimeBetweenEvictionRunsMillis(-1)
     pool = new JedisPool(config, server, port, timeout)
   }
 
