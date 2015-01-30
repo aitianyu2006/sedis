@@ -4,40 +4,43 @@ import redis.clients.jedis._
 
 import scala.collection.mutable
 
-case class SedisSortedSet(id: String, jedis: Jedis) extends mutable.Iterable[(String, Double)] {
+case class SedisSortedSet(id: String, pool: JedisPool) extends JedisResource(pool) with mutable.Iterable[(String, Double)] {
 
   def update(member: String, score: Double) = {
-    Sedis.check(jedis)
-    jedis.zadd(id, score, member)
+    closable { jedis =>
+      jedis.zadd(id, score, member)
+    }
   }
 
   def del(members: String*) = {
-    Sedis.check(jedis)
-    jedis.zrem(id, members: _*)
+    closable { jedis =>
+      jedis.zrem(id, members: _*)
+    }
   }
 
   def rank(member: String) = {
-    Sedis.check(jedis)
-    jedis.zrank(id, member)
+    closable { jedis =>
+      jedis.zrank(id, member)
+    }
   }
 
   def clear() = {
-    Sedis.check(jedis)
-    jedis.del(id)
+    closable { jedis =>
+      jedis.del(id)
+    }
   }
 
   def size(start: Double, end: Double): Int = {
-    Sedis.check(jedis)
-    jedis.zcount(id, start, end).toInt
+    closable { jedis =>
+      jedis.zcount(id, start, end).toInt
+    }
   }
 
   override def size: Int = {
-    Sedis.check(jedis)
-    jedis.zcount(id, "-inf", "+inf").toInt
+    closable { jedis =>
+      jedis.zcount(id, "-inf", "+inf").toInt
+    }
   }
 
-  override def iterator: Iterator[(String, Double)] = {
-    Sedis.check(jedis)
-    SedisSortedSetIterator(id, jedis)
-  }
+  override def iterator: Iterator[(String, Double)] = SedisSortedSetIterator(id, pool)
 }

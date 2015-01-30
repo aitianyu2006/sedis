@@ -6,41 +6,46 @@ import redis.clients.jedis._
 
 import scala.collection.mutable
 
-case class SedisHashSet[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends mutable.Map[String, T] {
+case class SedisHashSet[T <: AnyRef : Manifest](id: String, pool: JedisPool)(implicit formats: Formats = Sedis.formats) extends JedisResource(pool) with mutable.Map[String, T] {
 
   override def +=(kv: (String, T)): this.type = {
-    Sedis.check(jedis)
-    jedis.hset(id, kv._1, write(kv._2))
-    this
+    closable { jedis =>
+      jedis.hset(id, kv._1, write(kv._2))
+      this
+    }
   }
 
   override def -=(key: String): this.type = {
-    Sedis.check(jedis)
-    jedis.hdel(id, key)
-    this
+    closable { jedis =>
+      jedis.hdel(id, key)
+      this
+    }
   }
 
   override def get(key: String): Option[T] = {
-    Sedis.check(jedis)
-    if (jedis.exists(id)) {
-      jedis.hget(id, key) match {
-        case content: String => Option(read[T](content))
-        case _ => None
+    closable { jedis =>
+      if (jedis.exists(id)) {
+        jedis.hget(id, key) match {
+          case content: String => Option(read[T](content))
+          case _ => None
+        }
+      } else {
+        None
       }
-    } else {
-      None
     }
   }
 
   override def clear() = {
-    Sedis.check(jedis)
-    jedis.del(id)
+    closable { jedis =>
+      jedis.del(id)
+    }
   }
 
   override def size: Int = {
-    Sedis.check(jedis)
-    jedis.hlen(id).toInt
+    closable { jedis =>
+      jedis.hlen(id).toInt
+    }
   }
 
-  override def iterator: Iterator[(String, T)] = SedisHashSetIterator[T](id, jedis)
+  override def iterator: Iterator[(String, T)] = SedisHashSetIterator[T](id, pool)
 }

@@ -2,28 +2,32 @@ package io.github.junheng.sedis
 
 import org.json4s.Formats
 import redis.clients.jedis._
-
 import scala.collection.JavaConversions._
 
-case class SedisQueue(id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
+case class SedisQueue(id: String, pool: JedisPool)(implicit formats: Formats = Sedis.formats) extends JedisResource(pool) {
 
   def enqueue(payload: String) = {
-    Sedis.check(jedis)
-    jedis.lpush(id, payload)
+    closable { jedis =>
+      jedis.lpush(id, payload)
+    }
   }
 
-  def dequeue() = {
-    Sedis.check(jedis)
-    jedis.brpop(0, id).last
-  } //wait until available
+  //wait until available
+  def dequeue(): String = {
+    closable { jedis =>
+      jedis.brpop(0, id).last
+    }
+  }
 
   def clear() = {
-    Sedis.check(jedis)
-    jedis.del(id)
+    closable { jedis =>
+      jedis.del(id)
+    }
   }
 
   def size() = {
-    Sedis.check(jedis)
-    jedis.llen(id).toInt
+    closable { jedis =>
+      jedis.llen(id).toInt
+    }
   }
 }

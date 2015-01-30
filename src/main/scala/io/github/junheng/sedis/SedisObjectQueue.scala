@@ -6,25 +6,30 @@ import redis.clients.jedis._
 
 import scala.collection.JavaConversions._
 
-case class SedisObjectQueue(id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) {
+case class SedisObjectQueue(id: String, pool: JedisPool)(implicit formats: Formats = Sedis.formats) extends JedisResource(pool) {
 
   def enqueue(payload: AnyRef) = {
-    Sedis.check(jedis)
-    jedis.lpush(id, write(payload))
+    closable { jedis =>
+      jedis.lpush(id, write(payload))
+    }
   }
 
-  def dequeue[T <: AnyRef : Manifest]() = {
-    Sedis.check(jedis)
-    read[T](jedis.brpop(0, id).last)
-  } //wait until available
+  //wait until available
+  def dequeue[T <: AnyRef : Manifest](): T = {
+    closable { jedis =>
+      read[T](jedis.brpop(0, id).last)
+    }
+  }
 
   def clear() = {
-    Sedis.check(jedis)
-    jedis.del(id)
+    closable { jedis =>
+      jedis.del(id)
+    }
   }
 
-  def size() = {
-    Sedis.check(jedis)
-    jedis.llen(id).toInt
+  def size(): Long = {
+    closable { jedis =>
+      jedis.llen(id)
+    }
   }
 }

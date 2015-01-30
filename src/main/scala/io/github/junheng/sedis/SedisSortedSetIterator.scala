@@ -7,7 +7,7 @@ import redis.clients.jedis._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-case class SedisSortedSetIterator(id: String, jedis: Jedis) extends Iterator[(String, Double)] {
+case class SedisSortedSetIterator(id: String, pool: JedisPool) extends JedisResource(pool) with Iterator[(String, Double)] {
 
   var cursor = "0"
 
@@ -23,12 +23,13 @@ case class SedisSortedSetIterator(id: String, jedis: Jedis) extends Iterator[(St
   }
 
   private def scan(): util.List[Tuple] = {
-    Sedis.check(jedis)
-    val result = jedis.zscan(id, cursor)
-    isEnd = result.getStringCursor == "0"
-    cursor = result.getStringCursor
-    if (result.getResult.isEmpty && !isEnd) scan()
-    else result.getResult
+    closable { jedis =>
+      val result = jedis.zscan(id, cursor)
+      isEnd = result.getStringCursor == "0"
+      cursor = result.getStringCursor
+      if (result.getResult.isEmpty && !isEnd) scan()
+      else result.getResult
+    }
   }
 
   override def hasNext: Boolean = update().nonEmpty

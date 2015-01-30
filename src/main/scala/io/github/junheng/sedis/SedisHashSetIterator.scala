@@ -10,7 +10,7 @@ import redis.clients.jedis._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, jedis: Jedis)(implicit formats: Formats = Sedis.formats) extends Iterator[(String, T)] {
+case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, pool: JedisPool)(implicit formats: Formats = Sedis.formats) extends JedisResource(pool) with Iterator[(String, T)] {
 
   var cursor = "0"
 
@@ -29,12 +29,13 @@ case class SedisHashSetIterator[T <: AnyRef : Manifest](id: String, jedis: Jedis
   }
 
   private def scan(): util.List[Entry[String, String]] = {
-    Sedis.check(jedis)
-    val result: ScanResult[Entry[String, String]] = jedis.hscan(id, cursor)
-    isEnd = result.getStringCursor == "0"
-    cursor = result.getStringCursor
-    if (result.getResult.isEmpty && !isEnd) scan()
-    else result.getResult
+    closable { jedis =>
+      val result: ScanResult[Entry[String, String]] = jedis.hscan(id, cursor)
+      isEnd = result.getStringCursor == "0"
+      cursor = result.getStringCursor
+      if (result.getResult.isEmpty && !isEnd) scan()
+      else result.getResult
+    }
   }
 
   override def hasNext: Boolean = update().nonEmpty
