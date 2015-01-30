@@ -10,9 +10,7 @@ abstract class JedisResource(pool: JedisPool)(implicit formats: Formats = Sedis.
       resource = pool.getResource
       process(resource)
     } finally {
-      if (resource != null) {
-        pool.returnResource(resource)
-      }
+      pool.returnResource(resource)
     }
   }
 }
