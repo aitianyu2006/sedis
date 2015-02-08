@@ -18,7 +18,7 @@ libraryDependencies ++= {
 publishMavenStyle := true
 
 publishTo := {
-  val nexus = "http://58.220.7.39:8081/nexus/"
+  val nexus = "http://maven.nearfor.me:8081/nexus/"
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
   else
