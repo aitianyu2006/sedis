@@ -4,13 +4,13 @@ import org.json4s.Formats
 import redis.clients.jedis._
 
 abstract class JedisResource(pool: JedisPool)(implicit formats: Formats = Sedis.formats) {
-  def closable[T](process: (Jedis) => T) = {
+  def closable[T](process: (Jedis) => T):T = {
     var resource: Jedis = null
     try {
       resource = pool.getResource
       process(resource)
     } catch {
-      case ex: Exception => ex.printStackTrace()
+      case ex: Exception => null.asInstanceOf[T]
     } finally {
       pool.returnResource(resource)
     }

@@ -14,15 +14,3 @@ libraryDependencies ++= {
     "org.specs2" % "specs2_2.11" % "2.3.13"
   )
 }
-
-publishMavenStyle := true
-
-publishTo := {
-  val nexus = "http://maven.nearfor.me:8081/nexus/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "content/repositories/releases")
-}
-
-credentials += Credentials("Sonatype Nexus Repository Manager", "58.220.7.39", "deployment", "nearfor.me")

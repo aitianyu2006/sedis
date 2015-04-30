@@ -57,7 +57,7 @@ class Sedis(pool: JedisPool) extends JedisResource(pool) {
   }
 }
 
-object Sedis extends SedisRefactor{
+object Sedis {
   var pool: JedisPool = null
 
   var formats: Formats = DefaultFormats
@@ -78,10 +78,6 @@ object Sedis extends SedisRefactor{
   def enums(enums: Enumeration*) = enums.foreach(x => formats += new RangedEnumSerializer(x))
 
   def close() = pool.close()
-}
-
-trait SedisRefactor {
-  this: Sedis =>
 }
 
 class SedisConnectionBrokenException extends Exception
