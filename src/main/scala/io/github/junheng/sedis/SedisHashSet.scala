@@ -15,6 +15,22 @@ case class SedisHashSet[T <: AnyRef : Manifest](id: String, pool: JedisPool)(imp
     }
   }
 
+  override def ++=(xs: TraversableOnce[(String, T)]): this.type = {
+    import scala.collection.mutable.{Map => MMap}
+    import scala.collection.JavaConverters._
+
+    //val m = MMap.empty[String, String]
+    val m = new java.util.HashMap[String, String]()
+    xs.seq.foreach(x => {
+      m.put(x._1, write(x._2))
+    })
+
+    closable { jedis =>
+      jedis.hmset(id, m)
+      this
+    }
+  }
+
   override def -=(key: String): this.type = {
     closable { jedis =>
       jedis.hdel(id, key)
