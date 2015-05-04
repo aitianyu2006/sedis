@@ -51,6 +51,32 @@ case class SedisHashSet[T <: AnyRef : Manifest](id: String, pool: JedisPool)(imp
     }
   }
 
+  def mget(keys: Seq[String]): Seq[String] = {
+    import scala.collection.JavaConverters._
+    if (keys == Nil)
+      return Nil
+
+    closable { jedis =>
+      if (jedis.exists(id)) {
+        val list: java.util.List[String] = jedis.hmget(id, keys: _*)
+        list.asScala.toSeq.map(removeQuote(_))
+      } else {
+        Nil
+      }
+    }
+  }
+
+  private def removeQuote(str: String): String = {
+    if (str == null)
+      return null.asInstanceOf[String]
+    if (str.length >= 2) {
+      str.take(str.length - 1).drop(1)
+    } else {
+      // something wrong? and will cause index-out-of-bound exception
+      str
+    }
+  }
+
   override def clear() = {
     closable { jedis =>
       jedis.del(id)
@@ -64,4 +90,5 @@ case class SedisHashSet[T <: AnyRef : Manifest](id: String, pool: JedisPool)(imp
   }
 
   override def iterator: Iterator[(String, T)] = SedisHashSetIterator[T](id, pool)
+
 }
