@@ -15,6 +15,8 @@ class Sedis(pool: JedisPool) extends JedisResource(pool) {
 
   def sortedSet(id: String) = SedisSortedSet(s"$id-sorted_set", pool)
 
+  def set(id: String) = SedisSet(s"$id-set", pool)
+
   def put(key: String, value: String) = {
     closable { jedis =>
       jedis.sadd(key, value)

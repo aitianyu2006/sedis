@@ -6,6 +6,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite}
 import org.scalatest.junit.JUnitRunner
 import redis.clients.jedis.{JedisPoolConfig, JedisPool}
 
+import scala.util.Random
+
 /**
  * Test of SedisHashSetTest
  */
@@ -56,7 +58,7 @@ class SedisHashSetTest extends FunSuite with BeforeAndAfterEach with BeforeAndAf
   }
 
   test("jedis hmget") {
-    val pool = new JedisPool(new JedisPoolConfig(),"localhost", 6379)
+    val pool = new JedisPool(new JedisPoolConfig(), "localhost", 6379)
 
     val jedis = pool.getResource();
     val list: java.util.List[String] = jedis.hmget("SedisHashSetTest-test-hmget-hash", "Key1", "Key2")
@@ -75,5 +77,25 @@ class SedisHashSetTest extends FunSuite with BeforeAndAfterEach with BeforeAndAf
 
     println(s"list: ${list3}")
     println(s"list: ${list3(0).length}")
+  }
+
+  test("sedis hmset hmget 1000..") {
+    val hash = Sedis().hash[String]("thehash")
+
+    import scala.collection.mutable.ListBuffer
+    val lb = ListBuffer.empty[String]
+    for(i <- 0 to 2000) {
+      hash += (s"key-${i}" -> s"val-${i}")
+      if (Random.nextInt(10) < 6) {
+        lb += s"key-${i}"
+      }
+    }
+
+    val start = System.currentTimeMillis()
+    //val res = hash.mget(Seq("key-5", "key-100000009", "key-1", "key-A"))
+    val res = hash.mget(lb.toSeq)
+    val stop = System.currentTimeMillis()
+    println(s"len: ${lb.size} cost: ${stop - start} ms, res: ${res}")
+
   }
 }
