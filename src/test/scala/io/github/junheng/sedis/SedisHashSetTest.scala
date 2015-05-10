@@ -11,29 +11,9 @@ import scala.util.Random
 /**
  * Test of SedisHashSetTest
  */
-@RunWith(classOf[JUnitRunner])
-class SedisHashSetTest extends FunSuite with BeforeAndAfterEach with BeforeAndAfterAll {
-
-  override def beforeEach() {
-    //println("beforeEach")
-  }
-
-  override def afterEach() {
-    //println("afterEach")
-  }
-
-  override def beforeAll() {
-    Sedis.open("localhost", 6379)
-  }
-
-  override def afterAll() {
-    //println("afterAll")
-
-  }
-
+class SedisHashSetTest extends _DefaultSedisTest {
   test("test hmget") {
-    val hash = Sedis().hash[String]("SedisHashSetTest-test-hmget")
-
+    val hash = sedis.hash[String]("SedisHashSetTest-test-hmget")
 
     hash ++= Map(
       "Key1" -> "val1",
@@ -80,7 +60,7 @@ class SedisHashSetTest extends FunSuite with BeforeAndAfterEach with BeforeAndAf
   }
 
   test("sedis hmset hmget 1000..") {
-    val hash = Sedis().hash[String]("thehash")
+    val hash = sedis.hash[String]("thehash")
 
     import scala.collection.mutable.ListBuffer
     val lb = ListBuffer.empty[String]

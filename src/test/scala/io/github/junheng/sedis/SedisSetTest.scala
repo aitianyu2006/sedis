@@ -6,31 +6,10 @@ import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.BeforeAndAfterAll
 
-/**
- * Created by qyou on 15/5/6.
- */
 @RunWith(classOf[JUnitRunner])
-class SedisSetTest extends FunSuite with BeforeAndAfterEach with BeforeAndAfterAll {
-
-  override def beforeEach() {
-    //println("beforeEach")
-  }
-
-  override def afterEach() {
-    //println("afterEach")
-  }
-
-  override def beforeAll() {
-    Sedis.open("localhost", 6379)
-  }
-
-  override def afterAll() {
-    //println("afterAll")
-
-  }
-
+class SedisSetTest extends _DefaultSedisTest {
   test("test Set") {
-    val set = Sedis().set("MySet")
+    val set = sedis.set("MySet")
 
     set.add("ok", "yes", "abc", "def", "xyz")
 

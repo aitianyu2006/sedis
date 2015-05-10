@@ -3,9 +3,11 @@ package io.github.junheng.sedis
 import org.json4s.jackson.Serialization._
 import org.json4s.{DefaultFormats, Formats, Serializer}
 import redis.clients.jedis._
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{Map => MMap, ListBuffer}
 
-class Sedis(pool: JedisPool) extends JedisResource(pool) {
+class Sedis(val pool: JedisPool) extends JedisResource(pool) {
+  /** Script Mapping as (id -> sha1) */
+  var scriptCache = Map.empty[String, String]
 
   def objectQueue(id: String) = SedisObjectQueue(s"$id-object-queue", pool)
 
@@ -17,6 +19,8 @@ class Sedis(pool: JedisPool) extends JedisResource(pool) {
 
   def set(id: String) = SedisSet(s"$id-set", pool)
 
+  def script(id: String) = SedisScript(s"$id", this)
+
   def put(key: String, value: String) = {
     closable { jedis =>
       jedis.sadd(key, value)
@@ -26,6 +30,30 @@ class Sedis(pool: JedisPool) extends JedisResource(pool) {
   def exists(key: String): Boolean = {
     closable { jedis =>
       jedis.exists(key)
+    }
+  }
+
+  /**
+   * mexists implemted using pipeline
+   * For now the speed is slow than mexists implemented using script.
+   * @param keys
+   * @return
+   */
+  def mexists(keys: Seq[String]): Seq[Boolean] = {
+    if (keys == null) return null
+    if (keys == Nil) return Nil
+
+    closable { jedis =>
+      val pipeline = jedis.pipelined()
+
+      val resp = keys.map(x => {
+        pipeline.exists(x)
+      })
+      pipeline.sync()
+
+      resp.map(x => {
+        x.get().booleanValue()
+      })
     }
   }
 
@@ -58,34 +86,47 @@ class Sedis(pool: JedisPool) extends JedisResource(pool) {
       )
     }
   }
+
+  def close(): Unit = pool.close()
+
+  def scriptExists(scriptId: String, sha1: String): Boolean = {
+    this.scriptCache.getOrElse(scriptId, "") == sha1
+  }
+
+  def scriptUpdate(scriptId: String, sha1: String): Unit = {
+    scriptCache += scriptId -> sha1
+  }
 }
 
 object Sedis {
-  val DEFAULT_NAME = "default"
+  //val DEFAULT_NAME = "default"
 
-  val pools = MMap.empty[String, JedisPool]
+  //val pools = MMap.empty[String, JedisPool]
+
+  //val scriptsCache = MMap.empty[String, MMap[String, String]]  // cache for every instanceName, id : sha
 
   var formats: Formats = DefaultFormats
 
-  def apply(name: String = DEFAULT_NAME) = {
-    val pool = pools(name)
-    new Sedis(pool)
-  }
+//  def apply(name: String = DEFAULT_NAME) = {
+//    val pool = pools(name)
+//    new Sedis(pool)
+//  }
 
-  def open(server: String, port: Int): Unit = {
-    open(DEFAULT_NAME, server, port)
-  }
+//  def open(server: String, port: Int): Sedis = {
+//    open(server, port)
+//  }
 
-  def open(server: String, port: Int, poolSize: Int): Unit = {
-    open(DEFAULT_NAME, server, port, poolSize = poolSize)
-  }
+//  def open(server: String, port: Int, poolSize: Int): Sedis = {
+//    open(server, port, poolSize = poolSize)
+//  }
 
-  def open(name: String, server: String, port: Int, db: Int = 0, poolSize: Int = 128, idleSize: Int = 16, timeout: Int = 0): Unit = {
-    if (pools.contains(name)) {
-      throw new IllegalStateException(s"pool name with ${name} already exists.")
-    }
+  def open(server: String, port: Int, db: Int = 0, poolSize: Int = 128, idleSize: Int = 16, timeout: Int = 0): Sedis = {
+//    if (pools.contains(name)) {
+//      throw new IllegalStateException(s"pool name with ${name} already exists.")
+//    }
     val pool = newPool(server, port, db, poolSize, idleSize, timeout)
-    pools += (name -> pool)
+    //pools += (name -> pool)
+    new Sedis(pool)
   }
 
   def newPool(server: String, port: Int, db: Int = 0, poolSize: Int = 128, idleSize: Int = 16, timeout: Int = 0) = {
@@ -99,9 +140,9 @@ object Sedis {
 
   def enums(enums: Enumeration*) = enums.foreach(x => formats += new RangedEnumSerializer(x))
 
-  def close() = pools.foreach(x => {
-    x._2.close()
-  })
+//  def close() = pools.foreach(x => {
+//    x._2.close()
+//  })
 }
 
 class SedisConnectionBrokenException extends Exception

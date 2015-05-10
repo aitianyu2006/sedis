@@ -10,7 +10,9 @@ abstract class JedisResource(pool: JedisPool)(implicit formats: Formats = Sedis.
       resource = pool.getResource
       process(resource)
     } catch {
-      case ex: Exception => null.asInstanceOf[T]
+      case ex: Exception =>
+        ex.printStackTrace()
+        null.asInstanceOf[T]
     } finally {
       pool.returnResource(resource)
     }
