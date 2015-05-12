@@ -7,7 +7,7 @@ import scala.collection.mutable.{Map => MMap, ListBuffer}
 
 class Sedis(val pool: JedisPool) extends JedisResource(pool) {
   /** Script Mapping as (id -> sha1) */
-  var scriptCache = Map.empty[String, String]
+  @volatile var scriptCache = Map.empty[String, String]
 
   def objectQueue(id: String) = SedisObjectQueue(s"$id-object-queue", pool)
 

@@ -11,6 +11,7 @@ import scala.util.{Try, Success, Failure}
 
 /**
  * This is a limited implentation based on specific use-case.
+ * Implemented a eval-by-name approach, so we can pass in an id instead remember the sha1.
  */
 case class SedisScript(id: String, sedis: Sedis)(implicit formats: Formats = Sedis.formats) extends JedisResource(sedis.pool) {
   import SedisScript._
@@ -20,6 +21,11 @@ case class SedisScript(id: String, sedis: Sedis)(implicit formats: Formats = Sed
   def scr = _scr
   def sha = _sha
 
+  /**
+   * Load a script, and the result sha1 will be cached locally.
+   * @param script
+   * @return
+   */
   def load(script: String): String = {
     if (script == null || script.trim() == "") return null
 
@@ -37,7 +43,12 @@ case class SedisScript(id: String, sedis: Sedis)(implicit formats: Formats = Sed
     _sha
   }
 
-  def eval(params: String*) = {
+  /**
+   * Call against cached sha1, and it can be cached by @{load(String)}
+   * @param params
+   * @return
+   */
+  def evalsha(params: Seq[String]): AnyRef = {
     import scala.collection.JavaConverters._
     checkSha
 
@@ -51,6 +62,11 @@ case class SedisScript(id: String, sedis: Sedis)(implicit formats: Formats = Sed
         case Failure(f) => null
       }
     }
+  }
+
+  def eval(script: String)(params: Seq[String]): AnyRef = {
+    load(script)
+    evalsha(params)
   }
 
   def exists(): Boolean = {

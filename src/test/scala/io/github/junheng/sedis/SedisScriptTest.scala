@@ -20,7 +20,7 @@ class SedisScriptTest extends _DefaultSedisTest {
       |""".stripMargin.trim()
 
   test("sha1") {
-    val script = sedis.script("myscript");
+    val script = sedis.script("myscript")
 
     val str = SCRIPT_MEXISTS
 
@@ -32,8 +32,8 @@ class SedisScriptTest extends _DefaultSedisTest {
     assert(shaServer == sha1)
   }
 
-  test("test...") {
-    val script = sedis.script("myscript");
+  test("test evalsha") {
+    val script = sedis.script("myscript")
 
     //val keys = Seq("abc", "def", "xyz")
     val keys = (1 to 1000).map("Key-" + _)
@@ -41,11 +41,23 @@ class SedisScriptTest extends _DefaultSedisTest {
     script.load(SCRIPT_MEXISTS)
 
     val start = System.currentTimeMillis()
-    val res = script.eval(keys: _*)
+    val res = script.evalsha(keys)
     val stop  = System.currentTimeMillis()
-    println(s"cost: ${stop - start} ms, res: ${res}")
+    println(s"cost: ${stop - start} ms, script.evalsha: ${res}")
 
-    val singleres = script.eval("abc")
+    val singleres = script.evalsha(Seq("abc"))
     println(singleres)
+  }
+
+  test("test eval") {
+    val script = sedis.script("myscript")
+
+    val keys = (1 to 1000).map("Key-" + _)
+
+    val start = System.currentTimeMillis()
+    val res = script.eval(SCRIPT_MEXISTS)(keys)
+    val stop = System.currentTimeMillis()
+
+    println(s"cost: ${stop - start} ms, script.eval()(): ${res}")
   }
 }
