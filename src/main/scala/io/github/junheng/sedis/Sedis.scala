@@ -19,6 +19,20 @@ class Sedis(val pool: JedisPool) extends JedisResource(pool) {
 
   def set(id: String) = SedisSet(s"$id-set", pool)
 
+  def del(id: String*) = {
+    closable {
+      jedis =>
+        jedis.del(id: _*)
+    }
+  }
+
+  def rename(id: String, newId: String) = {
+    closable {
+      jedis =>
+        jedis.rename(id, newId)
+    }
+  }
+
   def script(id: String) = SedisScript(s"$id", this)
 
   def put(key: String, value: String) = {
@@ -99,33 +113,10 @@ class Sedis(val pool: JedisPool) extends JedisResource(pool) {
 }
 
 object Sedis {
-  //val DEFAULT_NAME = "default"
-
-  //val pools = MMap.empty[String, JedisPool]
-
-  //val scriptsCache = MMap.empty[String, MMap[String, String]]  // cache for every instanceName, id : sha
-
   var formats: Formats = DefaultFormats
 
-//  def apply(name: String = DEFAULT_NAME) = {
-//    val pool = pools(name)
-//    new Sedis(pool)
-//  }
-
-//  def open(server: String, port: Int): Sedis = {
-//    open(server, port)
-//  }
-
-//  def open(server: String, port: Int, poolSize: Int): Sedis = {
-//    open(server, port, poolSize = poolSize)
-//  }
-
   def open(server: String, port: Int, db: Int = 0, poolSize: Int = 128, idleSize: Int = 16, timeout: Int = 0): Sedis = {
-//    if (pools.contains(name)) {
-//      throw new IllegalStateException(s"pool name with ${name} already exists.")
-//    }
     val pool = newPool(server, port, db, poolSize, idleSize, timeout)
-    //pools += (name -> pool)
     new Sedis(pool)
   }
 
@@ -139,10 +130,6 @@ object Sedis {
   def format(serializers: Serializer[_]*) = serializers.foreach(x => formats += x)
 
   def enums(enums: Enumeration*) = enums.foreach(x => formats += new RangedEnumSerializer(x))
-
-//  def close() = pools.foreach(x => {
-//    x._2.close()
-//  })
 }
 
 class SedisConnectionBrokenException extends Exception
