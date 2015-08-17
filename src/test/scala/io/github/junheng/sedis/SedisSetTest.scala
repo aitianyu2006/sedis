@@ -6,6 +6,8 @@ import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.BeforeAndAfterAll
 
+import scala.util.Random
+
 @RunWith(classOf[JUnitRunner])
 class SedisSetTest extends _DefaultSedisTest {
   test("test Set") {
@@ -28,4 +30,26 @@ class SedisSetTest extends _DefaultSedisTest {
       println(s"it2: ${e}")
     }
   }
+
+  test("test Test O(1) ismember") {
+    val maxCount = 10000000
+    val testCount = 100
+    val set = sedis.set("Set10m")
+//    for (i ← 0 until maxCount) {
+//      set.add(formatedKey(i))
+//    }
+
+    val mid = maxCount / 2
+    // test check existance
+    for (i ← 0 until testCount) {
+      val keyId = Random.nextInt(maxCount) + mid
+      val key = formatedKey(keyId)
+      val start = System.currentTimeMillis()
+      val res = set.isMember(key)
+      val stop = System.currentTimeMillis()
+      println(s"res: of key $key is $res Time to check: ${stop - start} ")
+    }
+  }
+
+  @inline private def formatedKey(id: Int): String = s"SetMember-xxxxxx-abcdef-xxxxxxxx${id}"
 }

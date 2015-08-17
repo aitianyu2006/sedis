@@ -47,6 +47,12 @@ class Sedis(val pool: JedisPool) extends JedisResource(pool) {
     }
   }
 
+  def keys(pattern: String) = {
+    closable { jedis =>
+      jedis.keys(pattern)
+    }
+  }
+
   /**
    * mexists implemted using pipeline
    * For now the speed is slow than mexists implemented using script.

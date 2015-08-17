@@ -16,3 +16,15 @@ libraryDependencies ++= {
     "junit"          % "junit"          % "4.11"  % "test"
   )
 }
+
+publishMavenStyle := true
+
+publishTo := {
+  val nexus = "http://maven.nearfor.me:8081/nexus/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "content/repositories/releases")
+}
+
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")

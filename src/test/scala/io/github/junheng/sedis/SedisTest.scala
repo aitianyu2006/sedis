@@ -5,6 +5,8 @@ import java.util.UUID
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+import scala.collection.JavaConversions._
+
 @RunWith(classOf[JUnitRunner])
 class SedisTest extends _DefaultSedisTest {
   test("test mexists") {
@@ -52,5 +54,10 @@ class SedisTest extends _DefaultSedisTest {
 
     // cleanup
     //sedis.del(set2.id)
+  }
+
+  test("test keys") {
+    val res = sedis.keys("poi*")
+    res.foreach(println)
   }
 }
